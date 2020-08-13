@@ -90,6 +90,12 @@ void loop() {
       case '8':
         flopSwitch(SW_7);
         break;
+      case '\n':
+        Serial.println("Discarded new line character");
+        break;
+      default:
+        Serial.println("An unspecified character was received.");
+        Serial.println(inByte);
     }
   }
 }
