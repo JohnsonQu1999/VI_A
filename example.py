@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
 
 class WidgetGallery(QDialog):
     def __init__(self, parent=None):
-        super(WidgetGallery, self).__init__(parent)     # Inherits QDialog. Not realy sure what the two arguments being passed do.
+        super(WidgetGallery, self).__init__(parent)     # Inherits QDialog. Not really sure what the two arguments being passed do.
 
         # Saving the look of the program
         self.originalPalette = QApplication.palette()   # Remembers the original palette so the "Use Style's standard palette" checkbox is useful.

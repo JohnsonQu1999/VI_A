@@ -10,8 +10,8 @@ class GUI():
 
 		app = QApplication(sys.argv)
 		self.win = QMainWindow()
-		self.win.setGeometry(100,100,1500,900)
-		self.win.setWindowTitle("Virtual Interface")
+		self.win.setGeometry(100,100,1700,900)
+		self.win.setWindowTitle("McMaster University Department of Computing and Software DE1-SoC Virtual Interface")
 
 		# 1 make video placeholder
 		self.__createVideo__()
@@ -60,6 +60,7 @@ class GUI():
 
 		layout = QVBoxLayout()
 		layout.addWidget(label1)
+		layout.addStretch(1)
 
 		self.videoGroupBox.setLayout(layout)
 
