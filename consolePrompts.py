@@ -25,6 +25,8 @@ class consolePrompts():
 		ser.close()
 		print("Quit.")
 
+consolePrompts()
+
 # print("test")
 # num = int(input())
 # print(num)
