@@ -1,12 +1,23 @@
 const int KEY_0 = 2, KEY_1 = 3, KEY_2 = 4, KEY_3 = 5;
-const int SW_0 = 6, SW_1 = 7, SW_2 = 8, SW_3 = 9, SW_4 = 10, SW_5 = 11, SW_6 = 12, SW_7 = 13;
+const int SW_0 = 6, SW_1 = 7, SW_2 = 8, SW_3 = 9, SW_4 = 10, SW_5 = 11, SW_6 = 12, SW_7 = 13, SW_8 = A0, SW_9 = A1;
 int inByte;
 
 void setup() {
   Serial.begin(9600);
 
-  for (int a = 2; a <= 13; a++) {   //Setting pins as outputs
+  for (int a = 2; a <= 15; a++) {   // Setting pins as outputs
     pinMode(a, OUTPUT);
+  }
+
+//  pinMode(A0, OUTPUT);
+//  pinMode(A1, OUTPUT);
+
+  for (int a = 2; a <= 5; a++){     // Setting keys high (active low)
+    unPressKey(a);
+  }
+
+  for (int a = 6; a <= 15; a++){    // Setting switches low (active high)
+    flopSwitch(a);
   }
 
   Serial.println("Initialized.");
@@ -89,6 +100,18 @@ void loop() {
         break;
       case '8':
         flopSwitch(SW_7);
+        break;
+      case '9':
+        flipSwitch(SW_8);
+        break;
+      case ':':
+        flopSwitch(SW_8);
+        break;
+      case ';':
+        flipSwitch(SW_9);
+        break;
+      case '<':
+        flopSwitch(SW_9);
         break;
       case '\n':
         Serial.println("Discarded new line character");

@@ -85,6 +85,8 @@ class GUI():
 		self.switch_togglePB6 = QPushButton("SW[5]")
 		self.switch_togglePB7 = QPushButton("SW[6]")
 		self.switch_togglePB8 = QPushButton("SW[7]")
+		self.switch_togglePB9 = QPushButton("SW[8]")
+		self.switch_togglePB10 = QPushButton("SW[9]")
 		self.switch_togglePB1.setCheckable(True)
 		self.switch_togglePB2.setCheckable(True)
 		self.switch_togglePB3.setCheckable(True)
@@ -93,6 +95,8 @@ class GUI():
 		self.switch_togglePB6.setCheckable(True)
 		self.switch_togglePB7.setCheckable(True)
 		self.switch_togglePB8.setCheckable(True)
+		self.switch_togglePB9.setCheckable(True)
+		self.switch_togglePB10.setCheckable(True)
 		self.switch_togglePB1.setChecked(False)
 		self.switch_togglePB2.setChecked(False)
 		self.switch_togglePB3.setChecked(False)
@@ -101,6 +105,8 @@ class GUI():
 		self.switch_togglePB6.setChecked(False)
 		self.switch_togglePB7.setChecked(False)
 		self.switch_togglePB8.setChecked(False)
+		self.switch_togglePB9.setChecked(False)
+		self.switch_togglePB10.setChecked(False)
 		self.switch_togglePB1.clicked.connect(self.__SW0__)
 		self.switch_togglePB2.clicked.connect(self.__SW1__)
 		self.switch_togglePB3.clicked.connect(self.__SW2__)
@@ -109,6 +115,8 @@ class GUI():
 		self.switch_togglePB6.clicked.connect(self.__SW5__)
 		self.switch_togglePB7.clicked.connect(self.__SW6__)
 		self.switch_togglePB8.clicked.connect(self.__SW7__)
+		self.switch_togglePB9.clicked.connect(self.__SW8__)
+		self.switch_togglePB10.clicked.connect(self.__SW9__)
 
 		layout = QHBoxLayout()
 		layout.addWidget(self.switch_togglePB1)
@@ -119,6 +127,8 @@ class GUI():
 		layout.addWidget(self.switch_togglePB6)
 		layout.addWidget(self.switch_togglePB7)
 		layout.addWidget(self.switch_togglePB8)
+		layout.addWidget(self.switch_togglePB9)
+		layout.addWidget(self.switch_togglePB10)
 
 		self.switchGroupBox.setLayout(layout)
 
@@ -185,6 +195,22 @@ class GUI():
 		else:
 			print("SW7 deasserted")
 			self.ser.write("8".encode())
+
+	def __SW8__(self):
+		if(self.switch_togglePB9.isChecked()):
+			print("SW8 asserted")
+			self.ser.write("9".encode())
+		else:
+			print("SW7 deasserted")
+			self.ser.write(":".encode())
+
+	def __SW9__(self):
+		if(self.switch_togglePB10.isChecked()):
+			print("SW9 asserted")
+			self.ser.write(";".encode())
+		else:
+			print("SW9 deasserted")
+			self.ser.write("<".encode())
 
 	def __createKeys__(self):
 		self.keyGroupBox = QGroupBox("KEY [0...3]")
