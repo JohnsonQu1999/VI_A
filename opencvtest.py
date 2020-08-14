@@ -18,6 +18,9 @@ while(cap.isOpened()):
 		break;
 
 cap.release()
-return 0
+cv2.waitKey(1)
+cv2.destroyAllWindows()
+for a in range (1,5):
+	cv2.waitKey(1)
 
-# cv2.destroyAllWindows()
+return 0
