@@ -5,6 +5,10 @@ cap = cv2.VideoCapture(0)
 
 if(cap.isOpened() == False):
 	print("Error opening video stream")
+	exit(0)
+
+cap.set(3,1600)
+cap.set(4,900)
 
 while(cap.isOpened()):
 	ret, frame = cap.read()
