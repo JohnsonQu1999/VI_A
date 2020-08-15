@@ -38,7 +38,7 @@ class GUI():
 		self.win.setGeometry(100,100,1700,900)
 		self.win.setWindowTitle("McMaster University Department of Computing and Software DE1-SoC Virtual Interface")
 
-		# 1 make video placeholder
+		# 1 make video group
 		self.__createVideo__()
 
 		# 2 make key group
@@ -47,7 +47,7 @@ class GUI():
 		# 3 make switch group
 		self.__createSwitches__()
 
-		# 4 make file picker placeholder
+		# 4 make file upload group 
 		self.__createFileUploader__()
 
 		# combine 2, 3, 4 into a vbox
@@ -56,11 +56,6 @@ class GUI():
 		inputs_layout.addWidget(self.switchGroupBox)
 		inputs_layout.addWidget(self.fileUploaderGroupBox)
 		inputs_layout.addStretch(0)
-
-		# # combine 1 into a vbox
-		# outputs_layout = QVBoxLayout()
-		# outputs_layout.addWidget(self.videoGroupBox)
-		# outputs_layout.addStretch(1)
 
 		# create the main gridlayout
 		main_Layout = QGridLayout()
@@ -76,7 +71,7 @@ class GUI():
 		exit_code = app.exec()
 		self.ser.close()
 		print("Closed serial port.")
-		exit()
+		exit(exit_code)
 
 	def __setImage__(self, image):
 		self.videoLabel.setPixmap(QPixmap.fromImage(image))
