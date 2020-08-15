@@ -75,6 +75,8 @@ class GUI():
 		exit_code = app.exec()
 		self.ser.close()
 		print("Closed serial port.")
+		self.th.quit()
+		self.th.wait()
 		sys.exit(exit_code)
 
 	def __setImage__(self, image):
@@ -85,9 +87,9 @@ class GUI():
 
 		self.videoLabel = QLabel()
 		self.videoLabel.resize(640,480)
-		th = Thread()
-		th.changePixmap.connect(self.__setImage__)
-		th.start()
+		self.th = Thread()
+		self.th.changePixmap.connect(self.__setImage__)
+		self.th.start()
 
 		layout = QVBoxLayout()
 		layout.addWidget(self.videoLabel)
@@ -106,7 +108,7 @@ class GUI():
 		self.fileUploaderGroupBox.setLayout(layout)
 
 	def __createSwitches__(self):
-		self.switchGroupBox = QGroupBox("SW [0...7]")
+		self.switchGroupBox = QGroupBox("SW [0...9]")
 
 		self.switch_togglePB1 = QPushButton("SW[0]")
 		self.switch_togglePB2 = QPushButton("SW[1]")
