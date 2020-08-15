@@ -1,11 +1,12 @@
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGroupBox, QGridLayout, QHBoxLayout, QVBoxLayout,
-	QLabel, QPushButton, QStyleFactory, QWidget)
+	QLabel, QPushButton, QStyleFactory, QWidget, QFileDialog)
 from PyQt5.QtCore import QThread, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap
 import sys
 import serial
 import cv2
 import numpy as np
+import subprocess
 
 class Thread(QThread):
 	changePixmap = pyqtSignal(QImage)
@@ -24,7 +25,7 @@ class Thread(QThread):
 				h, w, ch = rgbImage.shape
 				bytesPerLine = ch*w
 				convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-				p = convertToQtFormat.scaled(640,480,Qt.KeepAspectRatio)
+				p = convertToQtFormat.scaled(800,600,Qt.KeepAspectRatio)
 				self.changePixmap.emit(p)
 
 class GUI():
@@ -76,8 +77,6 @@ class GUI():
 		self.ser.close()
 		print("Closed serial port.")
 		exit()
-		print("exit")
-		sys.exit(exit_code)
 
 	def __setImage__(self, image):
 		self.videoLabel.setPixmap(QPixmap.fromImage(image))
@@ -86,24 +85,44 @@ class GUI():
 		self.videoGroupBox = QGroupBox("Live FPGA Video Feed")
 
 		self.videoLabel = QLabel()
-		self.videoLabel.resize(640,480)
+		self.videoLabel.resize(800,600)
 		self.th = Thread()
 		self.th.changePixmap.connect(self.__setImage__)
 		self.th.start()
 
 		layout = QVBoxLayout()
+		layout.addStretch(1)
 		layout.addWidget(self.videoLabel)
 		layout.addStretch(1)
 
 		self.videoGroupBox.setLayout(layout)
 
-	def __createFileUploader__(self):
-		self.fileUploaderGroupBox = QGroupBox("Choose your .sof file")
+	def __uploadFileStatusUpdate__(self):
+		self.statusLabel.setText("Status: Picking/Uploading file...")
 
-		label1 = QLabel("File Uploader Placeholder")
+	def __uploadFile__(self):
+		filename = QFileDialog.getOpenFileName(None, "Open File", "C:\\","Programming Files (*.sof)")
+		if(filename[0] != ""):
+			self.sofFile = "p;"+filename[0]+"@2"
+			print(self.sofFile)
+			subprocess.run(["quartus_pgm","-m","jtag","-o",self.sofFile])
+			self.statusLabel.setText("Status: Uploaded {}.".format(filename[0]))
+			# quartus_pgm -m jtag -o "p;path/to/file.sof@2” 
+		else:
+			print("No file selected")
+			self.statusLabel.setText("Status: No file selected.")
+
+	def __createFileUploader__(self):
+		self.fileUploaderGroupBox = QGroupBox("Program FPGA")
+
+		filePickButton = QPushButton("Select .sof file and upload to FPGA")
+		filePickButton.clicked.connect(self.__uploadFileStatusUpdate__)
+		filePickButton.clicked.connect(self.__uploadFile__)
+		self.statusLabel = QLabel("Status: No file selected.")
 
 		layout = QVBoxLayout()
-		layout.addWidget(label1)
+		layout.addWidget(filePickButton)
+		layout.addWidget(self.statusLabel)
 
 		self.fileUploaderGroupBox.setLayout(layout)
 
