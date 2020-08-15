@@ -3,11 +3,13 @@ Virtual Interface
 
 === TODO ===
 
-• Get a working live feed
+• Reposition widgets to make the video feed larger
 
-• Integrate the feed and control program into a GUI
+• Modularize code, fix bad code
 
-• Integrate the programmer via scripting - see altera reference
+• Try to break the program (and then fix it)
+
+• Repackage as an executable/installer
 
 Note: As the Arduino UNO only has 12 pins this program will only implement KEY[0..3] and SW[0..7]. It would take 66 pins to implement all 4 keys, 10 switches, 10 ledr's and 6 7-segs.
 
@@ -18,3 +20,9 @@ Note: Actually, if I wrote an accompanying verilog top level module that student
 • Implement serial monitor control of program to assert certain pins.
 
 • Create a working python program to control the Arduino via serial to assert/deassert pins
+
+• Get a working live feed
+
+• Integrate the feed and control program into a GUI
+
+• Integrate the programmer via scripting - see altera reference
