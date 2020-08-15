@@ -75,8 +75,9 @@ class GUI():
 		exit_code = app.exec()
 		self.ser.close()
 		print("Closed serial port.")
+		exit()
+		print("exit")
 		sys.exit(exit_code)
-		print("sys exited")
 
 	def __setImage__(self, image):
 		self.videoLabel.setPixmap(QPixmap.fromImage(image))
