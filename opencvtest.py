@@ -17,7 +17,7 @@ while(cap.isOpened()):
 		cv2.imshow('Frame',frame)
 
 		if(cv2.waitKey(25) & 0xFF == ord('q')):
-			break;
+			break;	# breaks out of the while
 	else:
 		break;
 

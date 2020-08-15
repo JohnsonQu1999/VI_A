@@ -1,7 +1,31 @@
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGroupBox, QGridLayout, QHBoxLayout, QVBoxLayout,
 	QLabel, QPushButton, QStyleFactory, QWidget)
+from PyQt5.QtCore import QThread, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QImage, QPixmap
 import sys
 import serial
+import cv2
+import numpy as np
+
+class Thread(QThread):
+	changePixmap = pyqtSignal(QImage)
+
+	def run(self):
+		cap = cv2.VideoCapture(0)
+
+		if(cap.isOpened() == False):
+			print("Error opening video stream.")
+			return
+
+		while(True):
+			ret, frame = cap.read()
+			if(ret):
+				rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+				h, w, ch = rgbImage.shape
+				bytesPerLine = ch*w
+				convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
+				p = convertToQtFormat.scaled(640,480,Qt.KeepAspectRatio)
+				self.changePixmap.emit(p)
 
 class GUI():
 	def __init__(self):
@@ -53,13 +77,20 @@ class GUI():
 		print("Closed serial port.")
 		sys.exit(exit_code)
 
+	def __setImage__(self, image):
+		self.videoLabel.setPixmap(QPixmap.fromImage(image))
+
 	def __createVideo__(self):
 		self.videoGroupBox = QGroupBox("Live FPGA Video Feed")
 
-		label1 = QLabel("Video Feed Placeholder")
+		self.videoLabel = QLabel()
+		self.videoLabel.resize(640,480)
+		th = Thread()
+		th.changePixmap.connect(self.__setImage__)
+		th.start()
 
 		layout = QVBoxLayout()
-		layout.addWidget(label1)
+		layout.addWidget(self.videoLabel)
 		layout.addStretch(1)
 
 		self.videoGroupBox.setLayout(layout)
