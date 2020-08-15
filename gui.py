@@ -28,9 +28,9 @@ class Thread(QThread):
 				self.changePixmap.emit(p)
 
 class GUI():
-	def __init__(self, sys.argv = "COM6"):
-		self.ser = serial.Serial(port=sys.argv[0],baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
-		print("Opened serial port {}, baudrate 9600".format(sys.argv[0]))
+	def __init__(self, sysArgs = "COM6"):
+		self.ser = serial.Serial(port=sys.argv[1],baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
+		print("Opened serial port {}, baudrate 9600".format(sys.argv[1]))
 
 		app = QApplication(sys.argv)
 		self.win = QMainWindow()
