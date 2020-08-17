@@ -1,6 +1,18 @@
 ﻿# VI_A
 Virtual Interface
 
+=== DESCRIPTION ===
+
+The purpose of this project is to help facilitate labs in a remote setting. This tool will be used remotely by students who receive a damaged FPGA or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches.
+
+• gui.py is the main program. It takes one argument: the port used to communicate with the Arduino. Ex/ python gui.py COM1. 
+
+• consolePrompts.py is a precursor to gui.py. It takes console inputs and asserts pins on the Arduino.
+
+• opencvtest.py is a precursur to gui.py. It displays a live video feed.
+
+• filepickertest.py and filepickertest2.py are precursors to gui.py. They implement a GUI to pick a file.
+
 === TODO ===
 
 • Reposition widgets to make the video feed larger
