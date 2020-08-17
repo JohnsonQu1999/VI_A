@@ -31,6 +31,8 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 • Handle when camera stops working while application is running
 
+• Breakout video feed to full screen
+
 === DONE ===
 
 • Implement serial monitor control of program to assert certain pins.
