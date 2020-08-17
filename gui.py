@@ -71,7 +71,7 @@ class GUI():
 		exit_code = app.exec()
 		self.ser.close()
 		print("Closed serial port.")
-		exit(exit_code)
+		exit(exit_code)		# Kills the QThread
 
 	def __setImage__(self, image):
 		self.videoLabel.setPixmap(QPixmap.fromImage(image))
@@ -319,8 +319,6 @@ class GUI():
 			print("KEY3 deasserted")
 			self.ser.write("(".encode())
 
-
 print("working")
-
 
 GUI()
