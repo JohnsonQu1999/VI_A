@@ -5,7 +5,7 @@ Virtual Interface
 
 The purpose of this project is to help facilitate labs in a remote setting. This tool will be used remotely by students who receive a damaged FPGA or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches.
 
-• gui.py is the main program. It takes one argument: the port used to communicate with the Arduino. Ex/ python gui.py COM1. 
+• gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary.
 
 • consolePrompts.py is a precursor to gui.py. It takes console inputs and asserts pins on the Arduino.
 
@@ -15,25 +15,43 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 === TODO ===
 
-• Reposition widgets to make the video feed larger
+• Add camera status
 
-• Modularize code, fix bad code
+• Add a button to recheck the camera. Button should be greyed out unless the camera is unavailable
 
-• Try to break the program (and then fix it)
-
-• Repackage as an executable/installer
+• When first executing the program, try to connect the video. If success, deactivate the "connect camera" button. If failure, activate the button to try connecting to the camera again. In order to detect if the camera is disconnected mid-program, add a check if capisopen() in the main qthread loop.
 
 • Handle no camera when starting program
 
-• Handle unavailble/wrong port when starting
-
-• Handle correct status message when file upload fails
-
 • Handle when camera stops working while application is running
 
-• Breakout video feed to full screen
+• Handle correct status message when file upload fails - how to check for subprocess failure?
 
-=== DONE ===
+• Repackage as an executable/installer
+
+=== COMPLETED TODO ===
+
+• Handle if Arduino stops working
+
+• Add Arduino status
+
+• If Arduino not available deactivate KEYs/SWs
+
+• Add button to check Arduino. If available activate KEYs/SWs. The button will connect to the same __setuparduino__ method called originally.
+
+• Automatically detect Arduino port
+
+• Fix file status messages
+
+• Modularize code
+
+• Extend QMainWindow
+
+• Run the subprocess in a new thread so it doesn't freeze the program
+
+• Reposition widgets to make the video feed larger
+
+• Switch orders of KEY and SW to match board
 
 • Implement serial monitor control of program to assert certain pins.
 
@@ -47,4 +65,4 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 Note: As the Arduino UNO only has 12 pins this program will only implement KEY[0..3] and SW[0..7]. It would take 66 pins to implement all 4 keys, 10 switches, 10 ledr's and 6 7-segs.
 
-Note: Actually, if I wrote an accompanying verilog top level module that students must use I could implement a custom read-write protocol. log(66)/log(2) = 7 bits to select which pin. 1 bit read. 1 bit write. 1 bit data. For a total of 10 bits which could actually work! Lets just stick with the video feed for now though...
+Note: Actually, if I wrote an accompanying verilog top level module that students must use I could implement a custom read-write protocol. log(66)/log(2) = 7 bits to select which pin. 1 bit read. 1 bit write. 1 bit data. For a total of 10 bits which could actually work! Lets stick with the video feed for now though because it doesn't require students to use a top level module they don't yet understand.
