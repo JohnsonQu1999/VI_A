@@ -2,6 +2,8 @@
 
 If you represent a public Canadian university or other non-profit educational organizations and are interested in using this tool please contact me at quj1@mcmaster.ca.
 
+If you have any other questions feel free to contact me at the same email.
+
 The purpose of this project is to help facilitate labs in a remote setting. The purpose of this tool is to support remote access of university FPGAs by students who do not receive an FPGA in time, receive a damaged FPGA, or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches (4) gracefully recovers after hardware failure.
 
 * gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary unless you purchase a sub-par Arduino. All modules are contained within this file and is the only file needed.
