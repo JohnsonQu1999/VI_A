@@ -1,38 +1,56 @@
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGroupBox, QGridLayout, QHBoxLayout, QVBoxLayout,
 	QLabel, QPushButton, QStyleFactory, QWidget, QFileDialog)
 from PyQt5.QtCore import QThread, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QImage, QPixmap
-import sys
-import serial
-import serial.tools.list_ports
-import cv2
-import numpy as np
-import subprocess
+from PyQt5.QtGui import QImage, QPixmap			# To make GUI.
+import sys 										# To take command line arguments.
+import serial 									# To communicate with Arduino.
+import serial.tools.list_ports 					# To list available ports. Used to auto-detect Arduino.
+import cv2										# To get video.
+import numpy as np 								# OpenCV needs this.
+import subprocess								# To start new processes. Used to program the FPGA via quartus_pgm.
+import time 									# To tell time. Used to determine if the video (camera) feed has been disrupted.
 
-videoX = 1260
-videoY = 945
+videoX = 1504		# Optimized for a 1920x1080 screen. Change as necessary.
+videoY = 846		# Optimized for a 1920x1080 screen. Change as necessary.
 
 class videoThread(QThread):
 	changePixmap = pyqtSignal(QImage)
+	videoMissingSignal = pyqtSignal()
+	videoPresentSignal = pyqtSignal()
 
 	def run(self):
+		flag = 0
+		timeStart = 0
+		timeEnd = 0
+
 		cap = cv2.VideoCapture(0)
 
 		if(cap.isOpened() == False):
-			print("Error opening video stream.")
+			cap.release()
+			print("Released cap")
+			self.videoMissingSignal.emit()
 			return
 
-		print("Camera opened")
+		self.videoPresentSignal.emit()
+
+		cap.set(3, videoX)		# PropID 3 = CV_CAP_PROP_FRAME_WIDTH
+		cap.set(4, videoY)		# PropID 4 = CV_CAP_PROP_FRAME_HEIGHT
+		print("Video running at {}fps".format(cap.get(5)))
 
 		while(True):
-			ret, frame = cap.read()
-			if(ret):
+			returnValue, frame = cap.read()
+			if(returnValue):
 				rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 				h, w, ch = rgbImage.shape
 				bytesPerLine = ch*w
 				convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
 				p = convertToQtFormat.scaled(videoX,videoY,Qt.KeepAspectRatio)
 				self.changePixmap.emit(p)
+				flat = 0
+			else:
+				print("ret false")
+				self.videoMissingSignal.emit()
+
 
 class pgmThread(QThread):
 	uploadComplete = pyqtSignal()
@@ -44,26 +62,32 @@ class pgmThread(QThread):
 	def run(self):
 		subprocess.run(["quartus_pgm","-m","jtag","-o",self.sofFile])
 		self.uploadComplete.emit()
+		print("Closing quartus_programmer thread.")
 		# quartus_pgm -m jtag -o "p;path/to/file.sof@2”
 
 class GUI(QMainWindow):
 	def __init__(self):
+		# Control variables
+		self.serialOpen = False
+
+		# QMainWindow setup
 		QMainWindow.__init__(self)
 		self.setGeometry(100,100,1700,900)
 		self.setWindowTitle("McMaster University Department of Computing and Software DE1-SoC Virtual Interface")
 		self.setStyleSheet("QLabel {font: 14pt Calibri}" + "QPushButton {font: 14pt Calibri}" + "QGroupBox {font: 20pt Calibri}")
 
+		# \begin{Layout setup}
 		# 1 make video group
-		self.__createVideo__()
+		self.__createVideoGroupBox__()
 		# 2 make key group
-		self.__createKeys__()
+		self.__createKeysGroupBox__()
 		# 3 make switch group
-		self.__createSwitches__()
+		self.__createSwitchesGroupBox__()
 		# 4 make file upload group 
-		self.__createFileUploader__()
+		self.__createFileUploaderGroupBox__()
 		# 5 make arduino/camera status group
-		self.__createStatus__()
-
+		self.__createStatusGroupBox__()
+		#
 		# combine 2, 3 into an hbox
 		inputs_Layout_1 = QHBoxLayout()
 		inputs_Layout_1.addWidget(self.keyGroupBox)
@@ -78,22 +102,31 @@ class GUI(QMainWindow):
 		main_Layout = QHBoxLayout()
 		main_Layout.addWidget(self.videoGroupBox)
 		main_Layout.addLayout(inputs_Layout_2)
-		
+		#
 		# create a widget, set the layout, and set the combination to the central widget
 		centralWidget = QWidget()
 		centralWidget.setLayout(main_Layout)
 		self.setCentralWidget(centralWidget)
+		# \end{Layout setup}
 
+		# Setting up hardware that could break while the application runs. The application is intended to recover gracefully and even restore if hardware is restored.
+		# Practically, this means: Sending a signal while the arduino is unplugged won't crash the program - the user can try reconnecting to the arduino.
+		# Unplugging the camera won't crash the program - the user can try reconnecting. Similar behaviour if the camera is occupied.
+		# Unsuccessful programming will result in a notification to the user instead of stating "programming successful".
 		self.__setupArduino__()
+		self.__setupVideoThread__()
 
 	def __arduinoMissing__(self):
+		# update serial status
+		self.serialOpen = False
+
 		# update arduino device status
 		self.arduinoStatus.setText("Arduino Missing")
 
 		# deactivate check arduino button
 		self.arduinoReconnectButton.setEnabled(True)
 
-		# activate KEYs and SWs
+		# deactivate KEYs and SWs
 		self.key_togglePB1.setEnabled(False)
 		self.key_togglePB2.setEnabled(False)
 		self.key_togglePB3.setEnabled(False)
@@ -109,7 +142,26 @@ class GUI(QMainWindow):
 		self.switch_togglePB9.setEnabled(False)
 		self.switch_togglePB10.setEnabled(False)
 
+		# uncheck KEYs and SWs
+		self.key_togglePB1.setChecked(False)
+		self.key_togglePB2.setChecked(False)
+		self.key_togglePB3.setChecked(False)
+		self.key_togglePB4.setChecked(False)
+		self.switch_togglePB1.setChecked(False)
+		self.switch_togglePB2.setChecked(False)
+		self.switch_togglePB3.setChecked(False)
+		self.switch_togglePB4.setChecked(False)
+		self.switch_togglePB5.setChecked(False)
+		self.switch_togglePB6.setChecked(False)
+		self.switch_togglePB7.setChecked(False)
+		self.switch_togglePB8.setChecked(False)
+		self.switch_togglePB9.setChecked(False)
+		self.switch_togglePB10.setChecked(False)
+
 	def __arduinoPresent__(self):
+		# update serial status
+		self.serialOpen = True
+
 		# update arduino device status
 		self.arduinoStatus.setText("Arduino Present")
 
@@ -157,44 +209,61 @@ class GUI(QMainWindow):
 				arduinoPort = p.device
 
 		try:
-			self.ser = serial.Serial(port=arduinoPort,baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
-			print("Opened serial port {}, baudrate 9600 for Arduino.".format(arduinoPort))
+			# self.ser = serial.Serial(port=arduinoPort,baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
+			self.ser = serial.Serial(port="COM7",baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
+			print("Arduino: Opened serial port {}, baudrate 9600.".format(arduinoPort))
 			self.__arduinoPresent__()
-			self.serialOpen = True
 		except:
 			print("No Arduino found.")
 			self.__arduinoMissing__()
-			self.serialOpen = False
-
-	def __createStatus__(self):
-		self.statusGroupBox = QGroupBox("Device Status")
-
-		self.arduinoStatus = QLabel("Arduino Missing")
-		self.arduinoReconnectButton = QPushButton("Check Arduino Connection")
-		self.cameraStatus = QLabel("Camera Missing")
-		self.cameraReconnectButton = QPushButton("Check Camera Connection")
-
-		self.arduinoReconnectButton.clicked.connect(self.__setupArduino__)
-
-		layout_1 = QVBoxLayout()
-		layout_1.addWidget(self.arduinoStatus)
-		layout_1.addWidget(self.arduinoReconnectButton)
-		layout_1.addWidget(self.cameraStatus)
-		layout_1.addWidget(self.cameraReconnectButton)
-
-		self.statusGroupBox.setLayout(layout_1)
 
 	def __setImage__(self, image):
 		self.videoLabel.setPixmap(QPixmap.fromImage(image))
 
-	def __createVideo__(self):
+	def __videoMissing__(self):
+		print("Video Missing")
+
+		# update video status
+		self.videoOpen = True
+
+		# update video device status
+		self.videoStatus.setText("Video Missing")
+
+		# deactivate check video button
+		self.videoReconnectButton.setEnabled(True)
+
+		# Quit video thread
+		self.videoThread.quit()
+		print("Quit video thread.")
+
+	def __videoPresent__(self):
+		print("Video Present.")
+
+		# update video status
+		self.videoOpen = True
+
+		# update video device status
+		self.videoStatus.setText("Video Present")
+
+		# activate check video button
+		self.videoReconnectButton.setEnabled(False)
+
+	def __setupVideoThread__(self):
+		self.videoThread = videoThread()
+		self.videoThread.changePixmap.connect(self.__setImage__)			# Grabs new frames
+		self.videoThread.videoMissingSignal.connect(self.__videoMissing__)	# Updates system variables and GUI
+		self.videoThread.videoPresentSignal.connect(self.__videoPresent__)	# Updates system variables and GUI
+
+		self.videoThread.start()
+
+	def __restartVideoThread__(self):
+		self.videoThread.start()
+
+	def __createVideoGroupBox__(self):
 		self.videoGroupBox = QGroupBox("Live FPGA Video Feed")
 
 		self.videoLabel = QLabel()
 		self.videoLabel.resize(videoX,videoY)
-		self.th = videoThread()
-		self.th.changePixmap.connect(self.__setImage__)
-		self.th.start()
 
 		layout_1 = QVBoxLayout()
 		layout_1.addStretch(1)
@@ -228,7 +297,7 @@ class GUI(QMainWindow):
 			print("No file selected")
 			self.statusLabel.setText("Status: No file selected.")
 
-	def __createFileUploader__(self):
+	def __createFileUploaderGroupBox__(self):
 		self.fileUploaderGroupBox = QGroupBox("Program FPGA")
 
 		filePickButton = QPushButton("Select .sof file and upload to FPGA")
@@ -246,7 +315,26 @@ class GUI(QMainWindow):
 
 		self.fileUploaderGroupBox.setLayout(layout_1)
 
-	def __createSwitches__(self):
+	def __createStatusGroupBox__(self):
+		self.statusGroupBox = QGroupBox("Device Status")
+
+		self.arduinoStatus = QLabel("Arduino Missing")
+		self.arduinoReconnectButton = QPushButton("Check Arduino Connection")
+		self.videoStatus = QLabel("Camera Missing")
+		self.videoReconnectButton = QPushButton("Check Video Connection")
+
+		self.arduinoReconnectButton.clicked.connect(self.__setupArduino__)
+		self.videoReconnectButton.clicked.connect(self.__setupVideoThread__)
+
+		layout_1 = QVBoxLayout()
+		layout_1.addWidget(self.arduinoStatus)
+		layout_1.addWidget(self.arduinoReconnectButton)
+		layout_1.addWidget(self.videoStatus)
+		layout_1.addWidget(self.videoReconnectButton)
+
+		self.statusGroupBox.setLayout(layout_1)
+
+	def __createSwitchesGroupBox__(self):
 		self.switchGroupBox = QGroupBox("SW [0...9]")
 
 		self.switch_togglePB1 = QPushButton("SW[0]")
@@ -315,93 +403,99 @@ class GUI(QMainWindow):
 
 		self.switchGroupBox.setLayout(layout)
 
-	def __serialWrapper__(self, character):
+	def __serialWrapper__(self, character, mode, hardware):
 		try:
 			self.ser.write(character.encode())
+			if(mode == 0):
+				print("{} asserted.".format(hardware))
+			elif(mode == 1):
+				print("{} deasserted.".format(hardware))
+			else:
+				print("Unexpected mode.")
 		except:
 			self.__setupArduino__()
 
 	def __SW0__(self):
 		if(self.switch_togglePB1.isChecked()):
-			print("SW0 asserted")
-			self.__serialWrapper__(")")
+			# print("SW0 asserted.")
+			self.__serialWrapper__(")",0,"SW0")
 		else:
-			print("SW0 deasserted")
-			self.__serialWrapper__("*")
+			# print("SW0 deasserted.")
+			self.__serialWrapper__("*",1,"SW0")
 
 	def __SW1__(self):
 		if(self.switch_togglePB2.isChecked()):
-			print("SW1 asserted")
-			self.__serialWrapper__("+")
+			# print("SW1 asserted.")
+			self.__serialWrapper__("+",0,"SW1")
 		else:
-			print("SW1 deasserted")
-			self.__serialWrapper__(",")
+			# print("SW1 deasserted.")
+			self.__serialWrapper__(",",1,"SW1")
 
 	def __SW2__(self):
 		if(self.switch_togglePB3.isChecked()):
-			print("SW2 asserted")
-			self.__serialWrapper__("-")
+			# print("SW2 asserted.")
+			self.__serialWrapper__("-",0,"SW2")
 		else:
-			print("SW2 deasserted")
-			self.__serialWrapper__(".")
+			# print("SW2 deasserted.")
+			self.__serialWrapper__(".",1,"SW2")
 
 	def __SW3__(self):
 		if(self.switch_togglePB4.isChecked()):
-			print("SW3 asserted")
-			self.__serialWrapper__("/")
+			# print("SW3 asserted.")
+			self.__serialWrapper__("/",0,"SW3")
 		else:
-			print("SW3 deasserted")
-			self.__serialWrapper__("0")
+			# print("SW3 deasserted.")
+			self.__serialWrapper__("0",1,"SW3")
 
 	def __SW4__(self):
 		if(self.switch_togglePB5.isChecked()):
-			print("SW4 asserted")
-			self.__serialWrapper__("1")
+			# print("SW4 asserted.")
+			self.__serialWrapper__("1",0,"SW4")
 		else:
-			print("SW4 deasserted")
-			self.__serialWrapper__("2")
+			# print("SW4 deasserted.")
+			self.__serialWrapper__("2",1,"SW4")
 
 	def __SW5__(self):
 		if(self.switch_togglePB6.isChecked()):
-			print("SW5 asserted")
-			self.__serialWrapper__("3")
+			# print("SW5 asserted.")
+			self.__serialWrapper__("3",0,"SW5")
 		else:
-			print("SW5 deasserted")
-			self.__serialWrapper__("4")
+			# print("SW5 deasserted.")
+			self.__serialWrapper__("4",1,"SW5")
 
 	def __SW6__(self):
 		if(self.switch_togglePB7.isChecked()):
-			print("SW6 asserted")
-			self.__serialWrapper__("5")
+			# print("SW6 asserted.")
+			self.__serialWrapper__("5",0,"SW6")
 		else:
-			print("SW6 deasserted")
-			self.__serialWrapper__("6")
+			# print("SW6 deasserted.")
+			self.__serialWrapper__("6",1,"SW6")
 
 	def __SW7__(self):
 		if(self.switch_togglePB8.isChecked()):
-			print("SW7 asserted")
-			self.__serialWrapper__("7")
+			# print("SW7 asserted.")
+			self.__serialWrapper__("7",0,"SW7")
 		else:
-			print("SW7 deasserted")
-			self.__serialWrapper__("8")
+			# print("SW7 deasserted.")
+			self.__serialWrapper__("8",1,"SW7")
 
 	def __SW8__(self):
 		if(self.switch_togglePB9.isChecked()):
-			print("SW8 asserted")
-			self.__serialWrapper__("9")
+			# print("SW8 asserted.")
+			self.__serialWrapper__("9",0,"SW8")
 		else:
-			print("SW7 deasserted")
-			self.__serialWrapper__(":")
+			# print("SW8 deasserted.")
+			self.__serialWrapper__(":",1,"SW8")
 
 	def __SW9__(self):
 		if(self.switch_togglePB10.isChecked()):
-			print("SW9 asserted")
-			self.__serialWrapper__(";")
+			# print("SW9 asserted.")
+			self.__serialWrapper__(";",0,"SW9")
 		else:
-			print("SW9 deasserted")
-			self.__serialWrapper__("<")
+			# print("SW9 deasserted.")
+			self.__serialWrapper__("<",1,"SW9")
 
-	def __createKeys__(self):
+	def __createKeysGroupBox__(self):
 		self.keyGroupBox = QGroupBox("KEY [0...3]")
 
 		self.key_togglePB1 = QPushButton("KEY[0]")
@@ -436,40 +530,42 @@ class GUI(QMainWindow):
 
 	def __KEY0__(self):
 		if(self.key_togglePB1.isChecked()):
-			print("KEY0 asserted")
-			self.__serialWrapper__("!")
+			# print("KEY0 asserted.")
+			self.__serialWrapper__("!",0,"KEY0")
 		else:
-			print("KEY0 deasserted")
-			self.__serialWrapper__("\"")
+			# print("KEY0 deasserted.")
+			self.__serialWrapper__("\"",1,"KEY0")
 
 	def __KEY1__(self):
 		if(self.key_togglePB2.isChecked()):
-			print("KEY1 asserted")
-			self.__serialWrapper__("#")
+			# print("KEY1 asserted.")
+			self.__serialWrapper__("#",0,"KEY1")
 		else:
-			print("KEY1 deasserted")
-			self.__serialWrapper__("$")
+			# print("KEY1 deasserted.")
+			self.__serialWrapper__("$",1,"KEY1")
 
 	def __KEY2__(self):
 		if(self.key_togglePB3.isChecked()):
-			print("KEY2 asserted")
-			self.__serialWrapper__("%")
+			# print("KEY2 asserted.")
+			self.__serialWrapper__("%",0,"KEY2")
 		else:
-			print("KEY2 deasserted")
-			self.__serialWrapper__("&")
+			# print("KEY2 deasserted.")
+			self.__serialWrapper__("&",1,"KEY2")
 
 	def __KEY3__(self):
 		if(self.key_togglePB4.isChecked()):
-			print("KEY3 asserted")
-			self.__serialWrapper__("'")
+			# print("KEY3 asserted.")
+			self.__serialWrapper__("'",0,"KEY3")
 		else:
-			print("KEY3 deasserted")
-			self.__serialWrapper__("(")
+			# print("KEY3 deasserted.")
+			self.__serialWrapper__("(",1,"KEY3")
 
-print("starting")
+print("Starting.")
 
 if __name__ == '__main__':
 	app = QApplication(sys.argv)
+	app.setStyle("Fusion")
+
 	win = GUI()
 	win.show()
 	exit_code = app.exec()
@@ -478,10 +574,11 @@ if __name__ == '__main__':
 		win.ser.close()
 		print("Closed serial port.")
 	else:
-		print("No serial port to close")
+		print("No serial port to close.")
 	
-	win.th.quit()
-	print("Quit video thread")
+	win.videoThread.exit()
+	print("Quit video thread.")
+	print("Exit_code: {}.".format(exit_code))
 	exit(0)
 
 

@@ -19,11 +19,13 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 • Add a button to recheck the camera. Button should be greyed out unless the camera is unavailable
 
-• When first executing the program, try to connect the video. If success, deactivate the "connect camera" button. If failure, activate the button to try connecting to the camera again. In order to detect if the camera is disconnected mid-program, add a check if capisopen() in the main qthread loop.
+• When first executing the program, try to connect the video. If success, deactivate the "connect camera" button. If failure, activate the button to try connecting to the camera again. In order to detect if the camera is disconnected mid-program, use the return value from read()
 
 • Handle no camera when starting program
 
 • Handle when camera stops working while application is running
+
+• Add error messages when something goes wrong 
 
 • Handle correct status message when file upload fails - how to check for subprocess failure?
 
