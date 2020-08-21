@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QGroupBox, QGridLayout, QHBoxLayout, QVBoxLayout,
-	QLabel, QPushButton, QStyleFactory, QWidget, QFileDialog)
+	QLabel, QPushButton, QStyleFactory, QWidget, QFileDialog, QMessageBox)
 from PyQt5.QtCore import QThread, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap			# To make GUI.
 import sys 										# To take command line arguments.
@@ -68,6 +68,8 @@ class GUI(QMainWindow):
 	def __init__(self):
 		# Control variables
 		self.serialOpen = False
+		self.arduinoCounter = False		# Quick and dirty solution. Display an info box when the arduino is successfully reconnected, but not upon initial start up by seeing if "__arduinoPresent__" was signaled. There's probably a better way.
+		self.videoCounter = False		# Quick and dirty solution. Display an info box when the video is successfully reconnected, but not upon initial start up by seeing if "__videoPresent__" was signaled. There's probably a better way.
 
 		# QMainWindow setup
 		QMainWindow.__init__(self)
@@ -157,6 +159,16 @@ class GUI(QMainWindow):
 		self.switch_togglePB9.setChecked(False)
 		self.switch_togglePB10.setChecked(False)
 
+		# Error message
+		errMsgArduinoM = QMessageBox()
+		errMsgArduinoM.setIcon(QMessageBox.Critical)
+		errMsgArduinoM.setText("Arduino Serial Unavailable")
+		errMsgArduinoM.setInformativeText("Try pressing the 'Check Arduino Connection' button. If the error persists, contact a TA to check the physical connection.")
+		errMsgArduinoM.setWindowTitle("Arduino Serial Error")
+		errMsgArduinoM.setDetailedText("WANTED: ARDUINO FOR FAILURE TO CONNECT.")
+
+		print("Arduino Missing return value: {}.".format(errMsgArduinoM.exec()))
+
 	def __arduinoPresent__(self):
 		# update serial status
 		self.serialOpen = True
@@ -199,6 +211,18 @@ class GUI(QMainWindow):
 		self.switch_togglePB9.setChecked(False)
 		self.switch_togglePB10.setChecked(False)
 
+		# Info message
+		if(self.arduinoCounter == True):
+			infoMsgArduinoP = QMessageBox()
+			infoMsgArduinoP.setIcon(QMessageBox.Information)
+			infoMsgArduinoP.setText("Arduino Serial Reconnected")
+			infoMsgArduinoP.setWindowTitle("Success")
+			infoMsgArduinoP.setDetailedText("CAPTURED: ARDUINO FOR FAILURE TO CONNECT.")
+
+			print("Arduino Present return value: {}.".format(infoMsgArduinoP.exec()))
+
+		self.arduinoCounter = True
+
 	def __setupArduino__(self):
 		ports = list(serial.tools.list_ports.comports())
 		arduinoPort = "COM4"
@@ -235,6 +259,16 @@ class GUI(QMainWindow):
 		self.videoThread.quit()
 		print("QThread is Finished?: {}".format(self.videoThread.isFinished()))
 
+		# Error message
+		errMsgVideoM = QMessageBox()
+		errMsgVideoM.setIcon(QMessageBox.Critical)
+		errMsgVideoM.setText("Video Feed Unavailable")
+		errMsgVideoM.setInformativeText("Try pressing the 'Check Video Connection' button. If the error persists, contact a TA to check the physical connection.")
+		errMsgVideoM.setWindowTitle("Video Capture Error")
+		errMsgVideoM.setDetailedText("Video Feed Evaporated. Get a condenser from the nearest refrigerator!")
+
+		print("Video Missing return value: {}.".format(errMsgVideoM.exec()))
+
 	def __videoPresent__(self):
 		print("Video Present.")
 
@@ -246,6 +280,18 @@ class GUI(QMainWindow):
 
 		# activate check video button
 		self.videoReconnectButton.setEnabled(False)
+
+		# Info message
+		if(self.videoCounter == True):
+			infoMsgVideoP = QMessageBox()
+			infoMsgVideoP.setIcon(QMessageBox.Information)
+			infoMsgVideoP.setText("Video Reconnected")
+			infoMsgVideoP.setWindowTitle("Success")
+			infoMsgVideoP.setDetailedText("Good job! Condenser successfully installed.")
+
+			print("Arduino Present return value: {}.".format(infoMsgVideoP.exec()))
+
+		self.videoCounter = True
 
 	def __setupVideoThread__(self):
 		self.videoThread = videoThread()

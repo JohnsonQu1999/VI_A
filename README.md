@@ -7,21 +7,21 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 • gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary.
 
-• consolePrompts.py is a precursor to gui.py. It takes console inputs and asserts pins on the Arduino.
+• consolePrompts.py takes console inputs and asserts pins on the Arduino. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
 
-• opencvtest.py is a precursur to gui.py. It displays a live video feed.
+• opencvtest.py displays a live video feed. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
 
-• filepickertest.py and filepickertest2.py are precursors to gui.py. They implement a GUI to pick a file.
+• filepickertest.py and filepickertest2.py implement a GUI to pick a file. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
 
 === TODO ===
-
-• Add error messages when something goes wrong 
 
 • Handle correct status message when file upload fails - how to check for subprocess failure?
 
 • Repackage as an executable/installer
 
 === COMPLETED TODO ===
+
+• Add error messages when something goes wrong 
 
 • Add camera status
 
