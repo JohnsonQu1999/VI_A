@@ -52,17 +52,23 @@ class videoThread(QThread):
 		self.videoMissingSignal.emit()
 
 class pgmThread(QThread):
-	uploadComplete = pyqtSignal()
+	uploadSuccess = pyqtSignal()
+	uploadFailure = pyqtSignal(int)
 
 	def __init__(self, sofFile):
 		QThread.__init__(self)
 		self.sofFile = sofFile
 
 	def run(self):
-		subprocess.run(["quartus_pgm","-m","jtag","-o",self.sofFile])
-		self.uploadComplete.emit()
-		print("Closing quartus_programmer thread.")
-		# quartus_pgm -m jtag -o "p;path/to/file.sof@2”
+		try:
+			result = subprocess.run(["quartus_pgm","-m","jtag","-o",self.sofFile])
+			if(result.returncode == 0):
+				self.uploadSuccess.emit()
+			else:
+				self.uploadFailure.emit(result.returncode)
+			# quartus_pgm -m jtag -o "p;path/to/file.sof@2”
+		except:
+			self.uploadFailure.emit(-1)
 
 class GUI(QMainWindow):
 	def __init__(self):
@@ -322,7 +328,26 @@ class GUI(QMainWindow):
 
 		self.videoGroupBox.setLayout(layout_2)
 
-	def __uploadFileComplete__(self):
+	def __uploadFileFailure__(self, returncode):
+		self.statusLabel.setText("Status: Upload Failure with return code {}.".format(returncode))
+
+		# Error message
+		errMsgFileF = QMessageBox()
+		errMsgFileF.setIcon(QMessageBox.Warning)
+		errMsgFileF.setText("File Upload Failed")
+		errMsgFileF.setInformativeText("File Upload Failed with return code {}. Ensure that you are uploading a valid .sof file. If the error persists, contact a TA to check the physical connection.".format(returncode))
+		errMsgFileF.setWindowTitle("File Upload Error")
+		errMsgFileF.setDetailedText("""Unable to Upload File. Grab a spare from your toolbox.
+			Return codes:
+			0 - Execution was successful.
+			2 - Execution failed due to an internal error.
+			3 - Execution failed due to user error(s). Common cause: Programming cable not connected.
+			4 - Execution was stopped by user.
+			""")
+
+		print("File Failure return value: {}.".format(errMsgFileF.exec()))
+
+	def __uploadFileSuccess__(self):
 		self.statusLabel.setText("Status: Uploaded {}.".format(self.fileName))
 
 	def __uploadFile__(self):
@@ -335,7 +360,8 @@ class GUI(QMainWindow):
 			sofFile = "p;"+filename[0]+"@2"
 			print(sofFile)
 			self.pgmThread = pgmThread(sofFile)
-			self.pgmThread.uploadComplete.connect(self.__uploadFileComplete__)
+			self.pgmThread.uploadSuccess.connect(self.__uploadFileSuccess__)
+			self.pgmThread.uploadFailure.connect(self.__uploadFileFailure__)
 			self.pgmThread.start()
 			# quartus_pgm -m jtag -o "p;path/to/file.sof@2” 
 		else:
@@ -348,6 +374,7 @@ class GUI(QMainWindow):
 		filePickButton = QPushButton("Select .sof file and upload to FPGA")
 		filePickButton.clicked.connect(self.__uploadFile__)
 		self.statusLabel = QLabel("Status: No file selected.")
+		self.statusLabel.setWordWrap(True)
 
 		layout_1 = QVBoxLayout()
 		layout_1.addWidget(filePickButton)

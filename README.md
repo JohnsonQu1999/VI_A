@@ -12,11 +12,11 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 ## TODO
 
-* Handle correct status message when file upload fails - how to check for subprocess failure?
-
 * Repackage as an executable/installer
 
 ## COMPLETED TODO
+
+* Handle correct status message when file upload fails - how to check for subprocess failure? Ans: subprocess.run() returns a CompletedProcess object that contains a returncode. CompletedProcess.returncode.
 
 * Add error messages when something goes wrong 
 
