@@ -1,8 +1,6 @@
 ﻿# VI_A
 Virtual Interface
 
-## DESCRIPTION
-
 The purpose of this project is to help facilitate labs in a remote setting. This tool will be used remotely by students who receive a damaged FPGA or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches.
 
 * gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary.
