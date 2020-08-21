@@ -1,6 +1,6 @@
 ﻿# VI_A - Virtual Interface
 
-Developed by github.com/JohnsonQu1999 at McMaster University. If you represent a public Canadian university or other non-profit educational organizations and are interested in using this tool please contact me at quj1@mcmaster.ca.
+Developed by https://github.com/JohnsonQu1999 at McMaster University. If you represent a public Canadian university or other non-profit educational organizations and are interested in using this tool please contact me at quj1@mcmaster.ca.
 
 If you have any other questions feel free to contact me at the same email.
 
