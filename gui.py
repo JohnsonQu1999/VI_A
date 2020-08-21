@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QGroupBox, QGridLayout, 
 	QLabel, QPushButton, QStyleFactory, QWidget, QFileDialog, QMessageBox)
 from PyQt5.QtCore import QThread, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QImage, QPixmap			# To make GUI.
-import sys 										# To take command line arguments.
+import sys 										# To take command line arguments. No 
 import serial 									# To communicate with Arduino.
 import serial.tools.list_ports 					# To list available ports. Used to auto-detect Arduino.
 import cv2										# To get video.
@@ -13,15 +13,12 @@ videoX = 1504		# Optimized for a 1920x1080 screen. Change as necessary.
 videoY = 846		# Optimized for a 1920x1080 screen. Change as necessary.
 
 class videoThread(QThread):
-	changePixmap = pyqtSignal(QImage)
-	videoMissingSignal = pyqtSignal()
-	videoPresentSignal = pyqtSignal()
+	# Signals
+	changePixmap = pyqtSignal(QImage)	# Emited when a new frame is available.
+	videoMissingSignal = pyqtSignal()	# Emitted when frames are unavailable. Usually caused by a busy or missing camera.
+	videoPresentSignal = pyqtSignal()	# Emitted if camera setup is successful.
 
 	def run(self):
-		flag = 0
-		timeStart = 0
-		timeEnd = 0
-
 		cap = cv2.VideoCapture(0)
 
 		if(cap.isOpened() == False):
@@ -46,14 +43,15 @@ class videoThread(QThread):
 				self.changePixmap.emit(p)
 				flat = 0
 			else:
-				break 		# Need to break out of loop or else thread will never quit and cap will never stop trying to read
+				break 		# Break out of loop if return value == False. The loop must be broken out of or else the QThread will never quit and cap will never stop trying to read.
 
 		cap.release()
 		self.videoMissingSignal.emit()
 
 class pgmThread(QThread):
-	uploadSuccess = pyqtSignal()
-	uploadFailure = pyqtSignal(int)
+	# Signals 
+	uploadSuccess = pyqtSignal()		# Emitted if a return code of 0 is received
+	uploadFailure = pyqtSignal(int)		# Emitted if a non-zero return code is received. The return code is sent.
 
 	def __init__(self, sofFile):
 		QThread.__init__(self)
@@ -62,11 +60,11 @@ class pgmThread(QThread):
 	def run(self):
 		try:
 			result = subprocess.run(["quartus_pgm","-m","jtag","-o",self.sofFile])
+			# quartus_pgm -m jtag -o "p;path/to/file.sof@2”		<-- this is how you would enter the quartus_pgm command in command line.
 			if(result.returncode == 0):
 				self.uploadSuccess.emit()
 			else:
 				self.uploadFailure.emit(result.returncode)
-			# quartus_pgm -m jtag -o "p;path/to/file.sof@2”
 		except:
 			self.uploadFailure.emit(-1)
 
@@ -116,10 +114,10 @@ class GUI(QMainWindow):
 		self.setCentralWidget(centralWidget)
 		# \end{Layout setup}
 
-		# Setting up hardware that could break while the application runs. The application is intended to recover gracefully and even restore if hardware is restored.
+		# Setting up hardware that could break while the application runs. The application is intended to recover gracefully and even restore functionality if hardware is restored.
 		# Practically, this means: Sending a signal while the arduino is unplugged won't crash the program - the user can try reconnecting to the arduino.
 		# Unplugging the camera won't crash the program - the user can try reconnecting. Similar behaviour if the camera is occupied.
-		# Unsuccessful programming will result in a notification to the user instead of stating "programming successful".
+		# Unsuccessful programming will result in a notification to the user - the user can try reconnecting to the FPGA.
 		self.__setupArduino__()
 		self.__setupVideoThread__()
 
@@ -231,7 +229,7 @@ class GUI(QMainWindow):
 
 	def __setupArduino__(self):
 		ports = list(serial.tools.list_ports.comports())
-		arduinoPort = "COM4"
+		arduinoPort = "COM7"
 
 		for p in ports:
 			if "Arduino" in p.description:
@@ -239,7 +237,7 @@ class GUI(QMainWindow):
 
 		try:
 			# self.ser = serial.Serial(port=arduinoPort,baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
-			self.ser = serial.Serial(port="COM7",baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
+			self.ser = serial.Serial(port=arduinoPort,baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
 			print("Arduino: Opened serial port {}, baudrate 9600.".format(arduinoPort))
 			self.__arduinoPresent__()
 		except:
@@ -343,12 +341,22 @@ class GUI(QMainWindow):
 			2 - Execution failed due to an internal error.
 			3 - Execution failed due to user error(s). Common cause: Programming cable not connected.
 			4 - Execution was stopped by user.
+			-1 - Non-Quartus (custom) return code. Exception was thrown.
 			""")
 
 		print("File Failure return value: {}.".format(errMsgFileF.exec()))
 
 	def __uploadFileSuccess__(self):
 		self.statusLabel.setText("Status: Uploaded {}.".format(self.fileName))
+
+		# Info message
+		if(self.arduinoCounter == True):
+			infoMsgArduinoP = QMessageBox()
+			infoMsgArduinoP.setIcon(QMessageBox.Information)
+			infoMsgArduinoP.setText("File Successfully Uploaded")
+			infoMsgArduinoP.setWindowTitle("Success")
+
+			print("Arduino Present return value: {}.".format(infoMsgArduinoP.exec()))
 
 	def __uploadFile__(self):
 		self.statusLabel.setText("Status: Picking file...")
@@ -363,7 +371,6 @@ class GUI(QMainWindow):
 			self.pgmThread.uploadSuccess.connect(self.__uploadFileSuccess__)
 			self.pgmThread.uploadFailure.connect(self.__uploadFileFailure__)
 			self.pgmThread.start()
-			# quartus_pgm -m jtag -o "p;path/to/file.sof@2” 
 		else:
 			print("No file selected")
 			self.statusLabel.setText("Status: No file selected.")
@@ -379,11 +386,6 @@ class GUI(QMainWindow):
 		layout_1 = QVBoxLayout()
 		layout_1.addWidget(filePickButton)
 		layout_1.addWidget(self.statusLabel)
-		# layout_1.addStretch(0)
-
-		# layout_2 = QHBoxLayout()
-		# layout_2.addLayout(layout_1)
-		# layout_2.addStretch(1)
 
 		self.fileUploaderGroupBox.setLayout(layout_1)
 
@@ -489,82 +491,62 @@ class GUI(QMainWindow):
 
 	def __SW0__(self):
 		if(self.switch_togglePB1.isChecked()):
-			# print("SW0 asserted.")
 			self.__serialWrapper__(")",0,"SW0")
 		else:
-			# print("SW0 deasserted.")
 			self.__serialWrapper__("*",1,"SW0")
 
 	def __SW1__(self):
 		if(self.switch_togglePB2.isChecked()):
-			# print("SW1 asserted.")
 			self.__serialWrapper__("+",0,"SW1")
 		else:
-			# print("SW1 deasserted.")
 			self.__serialWrapper__(",",1,"SW1")
 
 	def __SW2__(self):
 		if(self.switch_togglePB3.isChecked()):
-			# print("SW2 asserted.")
 			self.__serialWrapper__("-",0,"SW2")
 		else:
-			# print("SW2 deasserted.")
 			self.__serialWrapper__(".",1,"SW2")
 
 	def __SW3__(self):
 		if(self.switch_togglePB4.isChecked()):
-			# print("SW3 asserted.")
 			self.__serialWrapper__("/",0,"SW3")
 		else:
-			# print("SW3 deasserted.")
 			self.__serialWrapper__("0",1,"SW3")
 
 	def __SW4__(self):
 		if(self.switch_togglePB5.isChecked()):
-			# print("SW4 asserted.")
 			self.__serialWrapper__("1",0,"SW4")
 		else:
-			# print("SW4 deasserted.")
 			self.__serialWrapper__("2",1,"SW4")
 
 	def __SW5__(self):
 		if(self.switch_togglePB6.isChecked()):
-			# print("SW5 asserted.")
 			self.__serialWrapper__("3",0,"SW5")
 		else:
-			# print("SW5 deasserted.")
 			self.__serialWrapper__("4",1,"SW5")
 
 	def __SW6__(self):
 		if(self.switch_togglePB7.isChecked()):
-			# print("SW6 asserted.")
 			self.__serialWrapper__("5",0,"SW6")
 		else:
-			# print("SW6 deasserted.")
 			self.__serialWrapper__("6",1,"SW6")
 
 	def __SW7__(self):
 		if(self.switch_togglePB8.isChecked()):
-			# print("SW7 asserted.")
 			self.__serialWrapper__("7",0,"SW7")
 		else:
-			# print("SW7 deasserted.")
 			self.__serialWrapper__("8",1,"SW7")
 
 	def __SW8__(self):
 		if(self.switch_togglePB9.isChecked()):
-			# print("SW8 asserted.")
 			self.__serialWrapper__("9",0,"SW8")
 		else:
-			# print("SW8 deasserted.")
 			self.__serialWrapper__(":",1,"SW8")
 
 	def __SW9__(self):
 		if(self.switch_togglePB10.isChecked()):
-			# print("SW9 asserted.")
 			self.__serialWrapper__(";",0,"SW9")
 		else:
-			# print("SW9 deasserted.")
 			self.__serialWrapper__("<",1,"SW9")
 
 	def __createKeysGroupBox__(self):
@@ -602,34 +584,26 @@ class GUI(QMainWindow):
 
 	def __KEY0__(self):
 		if(self.key_togglePB1.isChecked()):
-			# print("KEY0 asserted.")
 			self.__serialWrapper__("!",0,"KEY0")
 		else:
-			# print("KEY0 deasserted.")
 			self.__serialWrapper__("\"",1,"KEY0")
 
 	def __KEY1__(self):
 		if(self.key_togglePB2.isChecked()):
-			# print("KEY1 asserted.")
 			self.__serialWrapper__("#",0,"KEY1")
 		else:
-			# print("KEY1 deasserted.")
 			self.__serialWrapper__("$",1,"KEY1")
 
 	def __KEY2__(self):
 		if(self.key_togglePB3.isChecked()):
-			# print("KEY2 asserted.")
 			self.__serialWrapper__("%",0,"KEY2")
 		else:
-			# print("KEY2 deasserted.")
 			self.__serialWrapper__("&",1,"KEY2")
 
 	def __KEY3__(self):
 		if(self.key_togglePB4.isChecked()):
-			# print("KEY3 asserted.")
 			self.__serialWrapper__("'",0,"KEY3")
 		else:
-			# print("KEY3 deasserted.")
 			self.__serialWrapper__("(",1,"KEY3")
 
 print("Starting.")
@@ -652,5 +626,3 @@ if __name__ == '__main__':
 	print("Quit video thread.")
 	print("Exit_code: {}.".format(exit_code))
 	exit(0)
-
-
