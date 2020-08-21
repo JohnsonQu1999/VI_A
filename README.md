@@ -4,7 +4,7 @@ If you represent a public Canadian university or other non-profit educational or
 
 The purpose of this project is to help facilitate labs in a remote setting. This tool will be used remotely by students who receive a damaged FPGA or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches.
 
-* gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary.
+* gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary unless you purchase a sub-par Arduino.
 
 * consolePrompts.py takes console inputs and asserts pins on the Arduino. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
 
