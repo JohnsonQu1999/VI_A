@@ -1,6 +1,6 @@
 ﻿# VI_A - Virtual Interface
 
-If you represent a public Canadian university or other non-profit educational organizations and are interested in using this tool please contact me at quj1@mcmaster.ca.
+If you represent a public Canadian university or other non-profit educational organization and are interested in using this tool please contact me at quj1@mcmaster.ca.
 
 The purpose of this project is to help facilitate labs in a remote setting. This tool will be used remotely by students who receive a damaged FPGA or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches.
 
