@@ -8,7 +8,6 @@ import serial.tools.list_ports 					# To list available ports. Used to auto-dete
 import cv2										# To get video.
 import numpy as np 								# OpenCV needs this.
 import subprocess								# To start new processes. Used to program the FPGA via quartus_pgm.
-import time 									# To tell time. Used to determine if the video (camera) feed has been disrupted.
 
 videoX = 1504		# Optimized for a 1920x1080 screen. Change as necessary.
 videoY = 846		# Optimized for a 1920x1080 screen. Change as necessary.
@@ -27,7 +26,6 @@ class videoThread(QThread):
 
 		if(cap.isOpened() == False):
 			cap.release()
-			print("Released cap")
 			self.videoMissingSignal.emit()
 			return
 
@@ -48,9 +46,10 @@ class videoThread(QThread):
 				self.changePixmap.emit(p)
 				flat = 0
 			else:
-				print("ret false")
-				self.videoMissingSignal.emit()
+				break 		# Need to break out of loop or else thread will never quit and cap will never stop trying to read
 
+		cap.release()
+		self.videoMissingSignal.emit()
 
 class pgmThread(QThread):
 	uploadComplete = pyqtSignal()
@@ -234,7 +233,7 @@ class GUI(QMainWindow):
 
 		# Quit video thread
 		self.videoThread.quit()
-		print("Quit video thread.")
+		print("QThread is Finished?: {}".format(self.videoThread.isFinished()))
 
 	def __videoPresent__(self):
 		print("Video Present.")
@@ -324,7 +323,7 @@ class GUI(QMainWindow):
 		self.videoReconnectButton = QPushButton("Check Video Connection")
 
 		self.arduinoReconnectButton.clicked.connect(self.__setupArduino__)
-		self.videoReconnectButton.clicked.connect(self.__setupVideoThread__)
+		self.videoReconnectButton.clicked.connect(self.__restartVideoThread__)
 
 		layout_1 = QVBoxLayout()
 		layout_1.addWidget(self.arduinoStatus)

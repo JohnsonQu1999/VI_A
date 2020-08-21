@@ -15,6 +15,14 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 
 === TODO ===
 
+• Add error messages when something goes wrong 
+
+• Handle correct status message when file upload fails - how to check for subprocess failure?
+
+• Repackage as an executable/installer
+
+=== COMPLETED TODO ===
+
 • Add camera status
 
 • Add a button to recheck the camera. Button should be greyed out unless the camera is unavailable
@@ -24,14 +32,6 @@ The purpose of this project is to help facilitate labs in a remote setting. This
 • Handle no camera when starting program
 
 • Handle when camera stops working while application is running
-
-• Add error messages when something goes wrong 
-
-• Handle correct status message when file upload fails - how to check for subprocess failure?
-
-• Repackage as an executable/installer
-
-=== COMPLETED TODO ===
 
 • Handle if Arduino stops working
 
