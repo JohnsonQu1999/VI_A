@@ -236,7 +236,6 @@ class GUI(QMainWindow):
 				arduinoPort = p.device
 
 		try:
-			# self.ser = serial.Serial(port=arduinoPort,baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
 			self.ser = serial.Serial(port=arduinoPort,baudrate=9600,bytesize=serial.EIGHTBITS,timeout=1)
 			print("Arduino: Opened serial port {}, baudrate 9600.".format(arduinoPort))
 			self.__arduinoPresent__()
