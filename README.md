@@ -2,6 +2,8 @@
 
 Developed by https://github.com/JohnsonQu1999 at McMaster University.
 
+For usage see the student instruction document. For setup see the setup instruction document.
+
 For questions feel free to contact me at quj1@mcmaster.ca
 
 The purpose of this project is to help facilitate labs in a remote setting. This tool will support remote access of university FPGAs by students who do not receive an FPGA in time, receive a damaged FPGA, or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches (4) gracefully recovers after hardware failure.
