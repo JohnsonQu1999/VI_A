@@ -1,8 +1,8 @@
 ﻿# VI_A - Virtual Interface
 
-Developed by https://github.com/JohnsonQu1999 at McMaster University. Anyone representing McMaster University may use this tool. If you represent a public educational organization and are interested in using this tool please contact me at quj1@mcmaster.ca.
+Developed by https://github.com/JohnsonQu1999 at McMaster University.
 
-If you have any other questions feel free to contact me at the same email.
+If you have any other questions feel free to contact me at quj1@mcmaster.ca
 
 The purpose of this project is to help facilitate labs in a remote setting. The purpose of this tool is to support remote access of university FPGAs by students who do not receive an FPGA in time, receive a damaged FPGA, or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches (4) gracefully recovers after hardware failure.
 
