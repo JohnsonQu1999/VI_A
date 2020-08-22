@@ -6,15 +6,9 @@ For usage see the student instruction document. For setup see the setup instruct
 
 For technical questions feel free to contact me at quj1@mcmaster.ca.
 
-The purpose of this project is to help facilitate labs in a remote setting. This tool will support remote access of university FPGAs by students who do not receive an FPGA in time, receive a damaged FPGA, or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to virtually toggle keys and switches (4) gracefully recovers after hardware failure.
+The purpose of this project is to help facilitate labs in a remote setting. This tool will support remote access of university FPGAs by students who do not receive an FPGA in time, receive a damaged FPGA, or those who damage their boards. This tool (1) provides a live video feed of the board (2) allows students to upload a .sof file to program the FPGA (3) provides an interface to toggle keys and switches (4) gracefully recovers after hardware failure.
 
-* gui.py is the main program. It automatically finds the port for the Arduino so no arguments are necessary unless you purchase a sub-par Arduino. All modules are contained within this file and is the only file needed.
-
-* consolePrompts.py takes console inputs and asserts pins on the Arduino. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
-
-* opencvtest.py displays a live video feed. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
-
-* filepickertest.py and filepickertest2.py implement a GUI to pick a file. It is a precurser to gui.py that I used to test one component of the program. gui.py DOES NOT USE THIS MODULE. 
+gui.py is the only file needed. For required packages see the setup instruction document. 
 
 ## TODO
 
